@@ -1,1 +1,1060 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Eco Safeguard - Química e Meio Ambiente</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
 
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #040812;
+            color: #00ffcc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #game-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 900px;
+            max-height: 675px;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.25);
+            border: 2px solid #00ffcc;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #02050b;
+            display: flex;
+            flex-direction: column;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* HUD Superior */
+        .hud-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            font-weight: bold;
+            pointer-events: none;
+            text-shadow: 0 0 8px #00ffcc;
+            z-index: 5;
+        }
+
+        .hud-item {
+            background: rgba(4, 12, 24, 0.8);
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 255, 204, 0.3);
+        }
+
+        .overlay-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3, 8, 18, 0.92);
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 15px;
+            transition: opacity 0.3s ease;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .title-main {
+            font-size: clamp(24px, 6vw, 38px);
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: #00ffcc;
+            text-shadow: 0 0 15px #00ffcc, 0 0 30px #0088cc;
+            margin: 0 0 5px 0;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .subtitle-main {
+            font-size: clamp(11px, 3vw, 14px);
+            color: #88aaff;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: min(260px, 80%);
+        }
+
+        .btn {
+            background: rgba(0, 255, 204, 0.05);
+            border: 2px solid #00ffcc;
+            color: #00ffcc;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.1);
+            touch-action: manipulation;
+        }
+
+        .btn:hover, .btn:active {
+            background: #00ffcc;
+            color: #030812;
+            box-shadow: 0 0 20px #00ffcc;
+        }
+
+        .modal-content {
+            max-height: 90%;
+            overflow-y: auto;
+            background: #050e1d;
+            border: 2px solid #00ffcc;
+            border-radius: 10px;
+            padding: 20px;
+            width: min(550px, 95%);
+            color: #cceeff;
+            font-size: 13px;
+            line-height: 1.5;
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.3);
+        }
+
+        .modal-title {
+            color: #00ffcc;
+            font-size: 18px;
+            margin-top: 0;
+            border-bottom: 1px solid rgba(0, 255, 204, 0.3);
+            padding-bottom: 8px;
+        }
+
+        .element-grid-help {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .element-card-help {
+            overflow: hidden;
+            min-height: 52px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid #00ffcc;
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+
+        .controls-info {
+            font-size: 11px;
+            background: rgba(0, 255, 204, 0.08);
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* Controles Touch (Mobile Overlay) */
+        .touch-controls {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
+            z-index: 6;
+        }
+
+        .dpad {
+            display: flex;
+            gap: 10px;
+            pointer-events: auto;
+        }
+
+        .touch-btn {
+            width: 55px;
+            height: 55px;
+            background: rgba(4, 12, 24, 0.6);
+            border: 2px solid rgba(0, 255, 204, 0.5);
+            border-radius: 50%;
+            color: #00ffcc;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .touch-btn:active, .touch-btn.active {
+            background: rgba(0, 255, 204, 0.4);
+            border-color: #00ffcc;
+            transform: scale(0.95);
+        }
+
+        .btn-fire {
+            width: 70px;
+            height: 70px;
+            background: rgba(0, 255, 204, 0.2);
+            border: 2px solid #00ffcc;
+            font-weight: bold;
+            font-size: 12px;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-wrapper">
+    <!-- HUD -->
+    <div id="hud" class="hud-panel hidden">
+        <div class="hud-item" id="scoreDisplay">PONTOS: 0</div>
+        <button class="btn" style="pointer-events:auto;padding:4px 10px;font-size:12px;" onclick="pauseGame()">⏸ Pausa</button>
+        <div class="hud-item" id="livesDisplay">VIDAS: 3</div>
+    </div>
+
+    <!-- Menu Principal -->
+    <div id="main-menu" class="overlay-screen">
+        <h1 class="title-main">Eco Safeguard</h1>
+        <div class="subtitle-main">Química a serviço do meio ambiente</div>
+        <div id="menuRecord" style="color:#ffd700;font-family:'Courier New',monospace;margin:-15px 0 20px;font-size:13px;">🏆 Recorde: 0</div>
+        <div class="menu-buttons">
+            <button class="btn" onclick="startGame()">Iniciar Reação</button>
+            <button class="btn" onclick="openHelp()">Guia Poluentes</button>
+        </div>
+    </div>
+
+    <!-- Modal Ajuda -->
+    <div id="help-modal" class="overlay-screen hidden">
+        <div class="modal-content">
+            <h2 class="modal-title">Guia dos Poluentes</h2>
+            <p>Pilote o <strong>Catalisador Verde</strong> e neutralize poluentes antes que saturem a atmosfera.</p>
+
+            <div class="element-grid-help">
+                <div class="element-card-help" style="border-color: #a6b0c3;"><canvas class="help-icon" width="40" height="40" data-sym="Hg" style="float:left;margin-right:8px;"></canvas><strong>[Hg] Mercúrio:</strong> Contamina rios e peixes.</div>
+                <div class="element-card-help" style="border-color: #ff6633;"><canvas class="help-icon" width="40" height="40" data-sym="NO₂" style="float:left;margin-right:8px;"></canvas><strong>[NO₂] Smog:</strong> Causa problemas respiratórios.</div>
+                <div class="element-card-help" style="border-color: #ffd700;"><canvas class="help-icon" width="40" height="40" data-sym="SO₂" style="float:left;margin-right:8px;"></canvas><strong>[SO₂] Enxofre:</strong> Gera chuva ácida.</div>
+                <div class="element-card-help" style="border-color: #33cc66;"><canvas class="help-icon" width="40" height="40" data-sym="CH₄" style="float:left;margin-right:8px;"></canvas><strong>[CH₄] Metano:</strong> Gás de efeito estufa potente.</div>
+                <div class="element-card-help" style="border-color: #55aaff;"><canvas class="help-icon" width="40" height="40" data-sym="CFC" style="float:left;margin-right:8px;"></canvas><strong>[CFC] Ozônio:</strong> Destrói a camada de ozônio.</div>
+                <div class="element-card-help" style="border-color: #888888;"><canvas class="help-icon" width="40" height="40" data-sym="CO₂" style="float:left;margin-right:8px;"></canvas><strong>[CO₂] Carbono:</strong> Aquece o planeta.</div>
+            </div>
+
+            <div class="controls-info">
+                <strong>Controles PC:</strong> W/A/D ou Setas | Espaço: Atirar | P/Esc: Pausa<br>
+                <strong>Controles Celular:</strong> Botões virtuais na tela para girar, acelerar e disparar.
+            </div>
+
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn" onclick="closeHelp()">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Pausa -->
+    <div id="pause-screen" class="overlay-screen hidden">
+        <h1 class="title-main">Jogo Pausado</h1>
+        <div class="subtitle-main">Reator em espera</div>
+        <div id="pauseTip" style="max-width:440px;text-align:center;color:#cceeff;font-size:13px;line-height:1.5;margin:-10px 15px 20px;"></div>
+        <div class="menu-buttons">
+            <button class="btn" onclick="resumeGame()">Continuar</button>
+            <button class="btn" onclick="startGame()">Reiniciar</button>
+            <button class="btn" onclick="showMainMenu()">Menu Principal</button>
+        </div>
+    </div>
+
+    <!-- Tela Quiz -->
+    <div id="quiz-screen" class="overlay-screen hidden">
+        <h1 class="title-main" style="font-size:26px;">Reator em Risco!</h1>
+        <div class="subtitle-main" style="margin-bottom:15px;">Acerte para ganhar +1 vida extra</div>
+        <div id="quizQuestion" style="max-width:460px;text-align:center;color:#cceeff;font-size:15px;line-height:1.4;margin:0 15px 15px;"></div>
+        <div id="quizOptions" style="display:flex;flex-direction:column;gap:8px;width:min(400px,95%);"></div>
+        <div id="quizFeedback" style="max-width:460px;text-align:center;font-size:13px;line-height:1.4;margin:12px 15px 0;min-height:36px;"></div>
+        <button id="quizNext" class="btn hidden" style="margin-top:10px;" onclick="finishQuiz()">Continuar</button>
+    </div>
+
+    <!-- Game Over -->
+    <div id="game-over-screen" class="overlay-screen hidden">
+        <h1 class="title-main" style="color: #ff3366; text-shadow: 0 0 15px #ff3366;">Atmosfera Saturada!</h1>
+        <div class="subtitle-main" id="finalScoreDisplay">Pontuação Final: 0</div>
+        <div id="ecoTip" style="max-width:460px;text-align:center;color:#cceeff;font-size:13px;line-height:1.4;margin:-10px 15px 20px;"></div>
+        <div class="menu-buttons">
+            <button class="btn" onclick="startGame()">Tentar Novamente</button>
+            <button class="btn" onclick="showMainMenu()">Menu Principal</button>
+        </div>
+    </div>
+
+    <!-- Controles Mobile / Touch -->
+    <div id="touch-controls" class="touch-controls hidden">
+        <div class="dpad">
+            <button class="touch-btn" id="btn-left">◀</button>
+            <button class="touch-btn" id="btn-right">▶</button>
+            <button class="touch-btn" id="btn-thrust">▲</button>
+        </div>
+        <button class="touch-btn btn-fire" id="btn-fire">FOGO</button>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const hud = document.getElementById('hud');
+const scoreDisplay = document.getElementById('scoreDisplay');
+const livesDisplay = document.getElementById('livesDisplay');
+const mainMenu = document.getElementById('main-menu');
+const helpModal = document.getElementById('help-modal');
+const gameOverScreen = document.getElementById('game-over-screen');
+const finalScoreDisplay = document.getElementById('finalScoreDisplay');
+const pauseScreen = document.getElementById('pause-screen');
+const quizScreen = document.getElementById('quiz-screen');
+const quizQuestion = document.getElementById('quizQuestion');
+const quizOptions = document.getElementById('quizOptions');
+const quizFeedback = document.getElementById('quizFeedback');
+const quizNext = document.getElementById('quizNext');
+const touchControls = document.getElementById('touch-controls');
+
+let quizPool = [];
+let quizOk = false;
+
+const QUIZ = [
+    { q: 'Qual gás é o principal responsável pelo aumento do efeito estufa?', opts: ['CO₂', 'O₂', 'N₂', 'He'], exp: 'O CO₂ vem da queima de combustíveis fósseis e do desmatamento.' },
+    { q: 'Qual poluente reage com a água na atmosfera e causa a chuva ácida?', opts: ['SO₂', 'N₂', 'He', 'H₂'], exp: 'O SO₂ forma ácido sulfúrico ao reagir com a água da atmosfera.' },
+    { q: 'O Protocolo de Montreal baniu os CFCs para proteger qual camada?', opts: ['Camada de ozônio', 'Camada de gelo polar', 'Camada de nuvens', 'Camada de poeira'], exp: 'Os CFCs destroem o ozônio da estratosfera.' },
+    { q: 'Qual processo permite que as plantas absorvam CO₂ e liberem O₂?', opts: ['Fotossíntese', 'Combustão', 'Fermentação', 'Oxidação'], exp: 'Na fotossíntese, plantas utilizam luz e CO₂ para gerar O₂.' },
+    { q: 'Qual metal pesado usado no garimpo contamina rios e peixes?', opts: ['Mercúrio', 'Sódio', 'Cálcio', 'Magnésio'], exp: 'O mercúrio se acumula ao longo da cadeia alimentar.' }
+];
+
+let gameState = 'MENU';
+let score = 0;
+let lives = 3;
+
+const CHEMICAL_ELEMENTS = [
+    { symbol: 'Hg', name: 'Mercúrio', color: '#a6b0c3', reaction: 'Mercúrio contido!' },
+    { symbol: 'NO₂', name: 'Smog', color: '#ff6633', reaction: 'NO₂ → N₂ + O₂' },
+    { symbol: 'SO₂', name: 'Enxofre', color: '#ffd700', reaction: 'Chuva ácida evitada!' },
+    { symbol: 'CO₂', name: 'Carbono', color: '#888888', reaction: 'Fotossíntese: CO₂ → O₂' },
+    { symbol: 'CFC', name: 'Ozônio', color: '#55aaff', reaction: 'Camada protegida!' },
+    { symbol: 'CH₄', name: 'Metano', color: '#33cc66', reaction: 'Metano neutralizado!' }
+];
+
+const ECO_TIPS = [
+    'O CO₂ de queimadas e combustíveis fósseis intensifica o efeito estufa.',
+    'O SO₂ reage com a água da atmosfera e forma ácido sulfúrico (chuva ácida).',
+    'Conversores catalíticos dos carros transformam NOx e CO em gases menos nocivos.',
+    'O metano (CH₄) retém muito mais calor que o CO₂ em poucas décadas.',
+    'Os CFCs foram banidos porque destroem a camada de ozônio.'
+];
+
+const REACTION_TEXTS = ['Oxidação!', 'Neutralizado!', 'Desintegrado!', 'Sublimação!'];
+
+const keys = {
+    ArrowUp: false, W: false, w: false,
+    ArrowLeft: false, A: false, a: false,
+    ArrowRight: false, D: false, d: false,
+    Space: false
+};
+
+const ship = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    radius: 15,
+    angle: -Math.PI / 2,
+    rotationSpeed: 0.08,
+    thrust: 0.15,
+    friction: 0.985,
+    velocityX: 0,
+    velocityY: 0,
+    cooldown: 0,
+    invuln: 0
+};
+
+let bullets = [];
+let minerals = [];
+let particles = [];
+let reactionTexts = [];
+let bgDeco = [];
+
+// Eventos Teclado
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyP' || e.code === 'Escape') { if (!e.repeat) togglePause(); return; }
+    if (e.code === 'Space') { keys.Space = true; e.preventDefault(); }
+    if (keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.code)) {
+        keys[e.key] = true;
+        keys[e.code] = true;
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') keys.Space = false;
+    if (keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.code)) {
+        keys[e.key] = false;
+        keys[e.code] = false;
+    }
+});
+
+// Eventos Touch (Mobile Controls)
+function setupTouchButton(id, keyProp) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    const setKey = (val) => { keys[keyProp] = val; };
+    btn.addEventListener('touchstart', (e) => { e.preventDefault(); setKey(true); btn.classList.add('active'); });
+    btn.addEventListener('touchend', (e) => { e.preventDefault(); setKey(false); btn.classList.remove('active'); });
+    btn.addEventListener('touchcancel', (e) => { e.preventDefault(); setKey(false); btn.classList.remove('active'); });
+}
+
+setupTouchButton('btn-left', 'ArrowLeft');
+setupTouchButton('btn-right', 'ArrowRight');
+setupTouchButton('btn-thrust', 'ArrowUp');
+setupTouchButton('btn-fire', 'Space');
+
+function initBgDeco() {
+    bgDeco = [];
+    for (let i = 0; i < 8; i++) {
+        bgDeco.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: 20 + Math.random() * 25,
+            vx: (Math.random() - 0.5) * 0.3,
+            vy: (Math.random() - 0.5) * 0.3,
+            angle: Math.random() * Math.PI * 2,
+            vRot: (Math.random() - 0.5) * 0.01,
+            type: i % 2 === 0 ? 'benzene' : 'flask'
+        });
+    }
+}
+initBgDeco();
+
+function generateMineralVertices(radius) {
+    const numVertices = 7 + Math.floor(Math.random() * 4);
+    const vertices = [];
+    for (let i = 0; i < numVertices; i++) {
+        const angle = (i / numVertices) * Math.PI * 2;
+        const offset = radius * (0.75 + Math.random() * 0.4);
+        vertices.push({ x: Math.cos(angle) * offset, y: Math.sin(angle) * offset });
+    }
+    return vertices;
+}
+
+function spawnMineral(x, y, tier) {
+    const elem = CHEMICAL_ELEMENTS[Math.floor(Math.random() * CHEMICAL_ELEMENTS.length)];
+    const radius = tier === 3 ? 42 : (tier === 2 ? 26 : 16);
+
+    minerals.push({
+        x: x !== undefined ? x : Math.random() * canvas.width,
+        y: y !== undefined ? y : Math.random() * canvas.height,
+        tier: tier,
+        radius: radius,
+        velocityX: (Math.random() - 0.5) * (4.2 - tier * 0.8) * speedMult(),
+        velocityY: (Math.random() - 0.5) * (4.2 - tier * 0.8) * speedMult(),
+        angle: Math.random() * Math.PI * 2,
+        rotationSpeed: (Math.random() - 0.5) * 0.02,
+        seek: wave >= 3 && Math.random() < Math.min(0.5, (wave - 2) * 0.1),
+        element: elem,
+        vertices: generateMineralVertices(radius)
+    });
+}
+
+const MOLECULES = {
+    'CO₂': { atoms: [[0,0,.3,'#9aa0a6'],[-.8,0,.28,'#ff4d4d'],[.8,0,.28,'#ff4d4d']], bonds: [[0,1,2],[0,2,2]] },
+    'CH₄': { atoms: [[0,0,.3,'#9aa0a6'],[-.6,-.6,.17,'#ffffff'],[.6,-.6,.17,'#ffffff'],[-.6,.6,.17,'#ffffff'],[.6,.6,.17,'#ffffff']], bonds: [[0,1,1],[0,2,1],[0,3,1],[0,4,1]] },
+    'SO₂': { atoms: [[0,-.15,.32,'#ffd700'],[-.7,.45,.26,'#ff4d4d'],[.7,.45,.26,'#ff4d4d']], bonds: [[0,1,2],[0,2,2]] },
+    'NO₂': { atoms: [[0,-.15,.28,'#4a7cff'],[-.7,.45,.26,'#ff4d4d'],[.7,.45,.26,'#ff4d4d']], bonds: [[0,1,2],[0,2,1]] },
+    'CFC': { atoms: [[0,0,.28,'#9aa0a6'],[-.65,-.55,.3,'#33dd55'],[.65,-.55,.3,'#33dd55'],[-.55,.6,.2,'#aaffee'],[.55,.6,.2,'#aaffee']], bonds: [[0,1,1],[0,2,1],[0,3,1],[0,4,1]] },
+    'Hg': { atoms: [[0,0,.8,'#c3cbd9']], bonds: [] }
+};
+
+function drawMolecule(c, sym, R, angle) {
+    const mol = MOLECULES[sym];
+    if (!mol) return;
+    c.save();
+    c.rotate(angle || 0);
+    c.shadowBlur = 0;
+    c.lineCap = 'round';
+    c.strokeStyle = 'rgba(220,235,255,0.85)';
+    c.lineWidth = Math.max(1.5, R * 0.08);
+    for (const [i, j, o] of mol.bonds) {
+        const a = mol.atoms[i], b = mol.atoms[j];
+        const dx = b[0] - a[0], dy = b[1] - a[1];
+        const len = Math.hypot(dx, dy);
+        const nx = -dy / len, ny = dx / len;
+        const offs = o === 2 ? [-0.07, 0.07] : [0];
+        for (const off of offs) {
+            c.beginPath();
+            c.moveTo((a[0] + nx * off) * R, (a[1] + ny * off) * R);
+            c.lineTo((b[0] + nx * off) * R, (b[1] + ny * off) * R);
+            c.stroke();
+        }
+    }
+    for (const [x, y, r, col] of mol.atoms) {
+        c.beginPath();
+        c.arc(x * R, y * R, r * R, 0, Math.PI * 2);
+        c.fillStyle = col;
+        c.fill();
+        c.lineWidth = 1;
+        c.strokeStyle = 'rgba(0,0,0,0.4)';
+        c.stroke();
+    }
+    c.restore();
+}
+
+function createExplosion(x, y, color) {
+    for (let i = 0; i < 14; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 4;
+        particles.push({
+            x: x, y: y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            radius: 1.5 + Math.random() * 2,
+            color: color,
+            life: 25 + Math.random() * 15
+        });
+    }
+}
+
+function createReactionText(x, y, color, txt) {
+    reactionTexts.push({
+        x: x, y: y,
+        text: txt || REACTION_TEXTS[Math.floor(Math.random() * REACTION_TEXTS.length)],
+        color: color,
+        life: 40,
+        opacity: 1
+    });
+}
+
+function startGame() {
+    saveRecord();
+    score = 0;
+    lives = 3;
+    wave = 1;
+    for (const k in powers) powers[k] = false;
+    shieldOn = false;
+    shieldTimer = 0;
+    banner.life = 0;
+    ship.invuln = 90;
+    gameState = 'PLAYING';
+
+    ship.x = canvas.width / 2;
+    ship.y = canvas.height / 2;
+    ship.velocityX = 0;
+    ship.velocityY = 0;
+
+    bullets = [];
+    minerals = [];
+    particles = [];
+    reactionTexts = [];
+
+    mainMenu.classList.add('hidden');
+    helpModal.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
+    hud.classList.remove('hidden');
+    pauseScreen.classList.add('hidden');
+    touchControls.classList.remove('hidden');
+
+    for (let i = 0; i < 4; i++) {
+        let rx, ry;
+        do {
+            rx = Math.random() * canvas.width;
+            ry = Math.random() * canvas.height;
+        } while (Math.hypot(rx - ship.x, ry - ship.y) < 130);
+
+        spawnMineral(rx, ry, 3);
+    }
+}
+
+function openHelp() {
+    document.querySelectorAll('.help-icon').forEach(cv => {
+        const c = cv.getContext('2d');
+        c.clearRect(0, 0, 40, 40);
+        c.save();
+        c.translate(20, 20);
+        drawMolecule(c, cv.dataset.sym, 16, 0);
+        c.restore();
+    });
+    mainMenu.classList.add('hidden');
+    helpModal.classList.remove('hidden');
+}
+
+function closeHelp() {
+    helpModal.classList.add('hidden');
+    mainMenu.classList.remove('hidden');
+}
+
+function showMainMenu() {
+    saveRecord();
+    gameState = 'MENU';
+    pauseScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
+    hud.classList.add('hidden');
+    touchControls.classList.add('hidden');
+    mainMenu.classList.remove('hidden');
+}
+
+function showQuiz() {
+    gameState = 'QUIZ';
+    touchControls.classList.add('hidden');
+    for (const k in keys) keys[k] = false;
+    if (quizPool.length === 0) quizPool = QUIZ.map((_, i) => i);
+    const idx = quizPool.splice(Math.floor(Math.random() * quizPool.length), 1)[0];
+    const item = QUIZ[idx];
+    const correct = item.opts[0];
+    const opts = [...item.opts].sort(() => Math.random() - 0.5);
+    quizQuestion.textContent = item.q;
+    quizOptions.innerHTML = '';
+    quizFeedback.textContent = '';
+    quizNext.classList.add('hidden');
+    opts.forEach(o => {
+        const b = document.createElement('button');
+        b.className = 'btn';
+        b.style.textTransform = 'none';
+        b.style.letterSpacing = '0';
+        b.textContent = o;
+        b.onclick = () => answerQuiz(b, o === correct, correct, item.exp);
+        quizOptions.appendChild(b);
+    });
+    quizScreen.classList.remove('hidden');
+}
+
+function answerQuiz(btn, ok, correct, exp) {
+    quizOk = ok;
+    quizOptions.querySelectorAll('button').forEach(b => {
+        b.disabled = true;
+        if (b.textContent === correct) { b.style.background = '#00ffcc'; b.style.color = '#030812'; }
+    });
+    if (!ok) { btn.style.borderColor = '#ff3366'; btn.style.color = '#ff3366'; }
+    quizFeedback.style.color = ok ? '#00ffcc' : '#ff6688';
+    quizFeedback.textContent = (ok ? 'Correto! +1 vida extra. ' : 'Resposta: ' + correct + '. ') + exp;
+    quizNext.textContent = ok ? 'Continuar' : 'Ver resultado';
+    quizNext.classList.remove('hidden');
+}
+
+function finishQuiz() {
+    quizScreen.classList.add('hidden');
+    if (!quizOk) { triggerGameOver(); return; }
+    lives += 1;
+    ship.invuln = 120;
+    ship.x = canvas.width / 2;
+    ship.y = canvas.height / 2;
+    touchControls.classList.remove('hidden');
+    gameState = 'PLAYING';
+}
+
+let highScore = 0;
+try { highScore = parseInt(localStorage.getItem('ecoSafeguardRecord') || '0', 10) || 0; } catch (e) {}
+let wave = 1;
+let shieldOn = false;
+let shieldTimer = 0;
+const powers = { dual: false, shield: false, rapid: false, spread: false };
+const banner = { text: '', life: 0 };
+const POWER_LEVELS = [
+    { score: 1500, key: 'dual', name: 'Tiro Duplo' },
+    { score: 4000, key: 'shield', name: 'Escudo' },
+    { score: 8000, key: 'rapid', name: 'Disparo Rápido' },
+    { score: 14000, key: 'spread', name: 'Tiro em Leque' }
+];
+
+function speedMult() { return Math.min(2.2, 1 + (wave - 1) * 0.1); }
+function updateMenuRecord() { document.getElementById('menuRecord').textContent = '🏆 Recorde: ' + highScore; }
+
+function saveRecord() {
+    if (score > highScore) {
+        highScore = score;
+        try { localStorage.setItem('ecoSafeguardRecord', String(highScore)); } catch (e) {}
+    }
+    updateMenuRecord();
+}
+updateMenuRecord();
+
+function showBanner(t) { banner.text = t; banner.life = 120; }
+
+function checkPowers() {
+    for (const p of POWER_LEVELS) {
+        if (score >= p.score && !powers[p.key]) {
+            powers[p.key] = true;
+            if (p.key === 'shield') shieldOn = true;
+            showBanner('⚡ PODER: ' + p.name);
+        }
+    }
+}
+
+function fireVolley() {
+    let shots;
+    if (powers.spread) shots = [[0, 0], [-0.2, 0], [0.2, 0]];
+    else if (powers.dual) shots = [[0, -5], [0, 5]];
+    else shots = [[0, 0]];
+    for (const [da, off] of shots) {
+        const a = ship.angle + da;
+        const px = -Math.sin(ship.angle) * off;
+        const py = Math.cos(ship.angle) * off;
+        bullets.push({
+            x: ship.x + Math.cos(ship.angle) * ship.radius + px,
+            y: ship.y + Math.sin(ship.angle) * ship.radius + py,
+            vx: Math.cos(a) * 8.5 + ship.velocityX,
+            vy: Math.sin(a) * 8.5 + ship.velocityY,
+            life: 45
+        });
+    }
+}
+
+function drawOverlays() {
+    if (gameState === 'PLAYING' || gameState === 'PAUSED') {
+        ctx.save();
+        if (shieldOn) {
+            ctx.strokeStyle = 'rgba(85,170,255,0.9)';
+            ctx.fillStyle = 'rgba(85,170,255,0.12)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(ship.x, ship.y, ship.radius + 9, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        } else if (ship.invuln > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(ship.x, ship.y, ship.radius + 7, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+    if (banner.life > 0) {
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, banner.life / 30);
+        ctx.font = 'bold 22px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#ffd700';
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 10;
+        ctx.fillText(banner.text, canvas.width / 2, 90);
+        ctx.restore();
+    }
+}
+
+function pauseGame() {
+    if (gameState !== 'PLAYING') return;
+    gameState = 'PAUSED';
+    touchControls.classList.add('hidden');
+    for (const k in keys) keys[k] = false;
+    document.getElementById('pauseTip').innerText = '🌱 ' + ECO_TIPS[Math.floor(Math.random() * ECO_TIPS.length)];
+    pauseScreen.classList.remove('hidden');
+}
+
+function resumeGame() {
+    if (gameState !== 'PAUSED') return;
+    gameState = 'PLAYING';
+    touchControls.classList.remove('hidden');
+    pauseScreen.classList.add('hidden');
+}
+
+function togglePause() {
+    if (gameState === 'PLAYING') pauseGame();
+    else if (gameState === 'PAUSED') resumeGame();
+}
+
+function triggerGameOver() {
+    gameState = 'GAME_OVER';
+    hud.classList.add('hidden');
+    touchControls.classList.add('hidden');
+    saveRecord();
+    finalScoreDisplay.innerText = `Pontos: ${score} · Onda ${wave}\nRecorde: ${highScore}`;
+    document.getElementById('ecoTip').innerText = '🌱 ' + ECO_TIPS[Math.floor(Math.random() * ECO_TIPS.length)];
+    gameOverScreen.classList.remove('hidden');
+}
+
+function update() {
+    for (let d of bgDeco) {
+        d.x += d.vx; d.y += d.vy; d.angle += d.vRot;
+        if (d.x < -50) d.x = canvas.width + 50;
+        if (d.x > canvas.width + 50) d.x = -50;
+        if (d.y < -50) d.y = canvas.height + 50;
+        if (d.y > canvas.height + 50) d.y = -50;
+    }
+
+    if (gameState !== 'PLAYING') return;
+
+    if (keys.ArrowLeft || keys.A || keys.a) ship.angle -= ship.rotationSpeed;
+    if (keys.ArrowRight || keys.D || keys.d) ship.angle += ship.rotationSpeed;
+
+    if (keys.ArrowUp || keys.W || keys.w) {
+        ship.velocityX += Math.cos(ship.angle) * ship.thrust;
+        ship.velocityY += Math.sin(ship.angle) * ship.thrust;
+    }
+
+    ship.velocityX *= ship.friction;
+    ship.velocityY *= ship.friction;
+    ship.x += ship.velocityX;
+    ship.y += ship.velocityY;
+
+    if (ship.x < 0) ship.x = canvas.width;
+    if (ship.x > canvas.width) ship.x = 0;
+    if (ship.y < 0) ship.y = canvas.height;
+    if (ship.y > canvas.height) ship.y = 0;
+
+    if (ship.cooldown > 0) ship.cooldown--;
+    if (ship.invuln > 0) ship.invuln--;
+    if (powers.shield && !shieldOn && shieldTimer > 0 && --shieldTimer === 0) shieldOn = true;
+    if (keys.Space && ship.cooldown === 0) {
+        fireVolley();
+        ship.cooldown = powers.rapid ? 6 : 11;
+    }
+
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        let b = bullets[i];
+        b.x += b.vx; b.y += b.vy; b.life--;
+        if (b.x < 0) b.x = canvas.width;
+        if (b.x > canvas.width) b.x = 0;
+        if (b.y < 0) b.y = canvas.height;
+        if (b.y > canvas.height) b.y = 0;
+        if (b.life <= 0) bullets.splice(i, 1);
+    }
+
+    for (let m of minerals) {
+        if (m.seek) {
+            const ang = Math.atan2(ship.y - m.y, ship.x - m.x);
+            m.velocityX += Math.cos(ang) * 0.012;
+            m.velocityY += Math.sin(ang) * 0.012;
+            const sp = Math.hypot(m.velocityX, m.velocityY);
+            const mx = 1.2 + wave * 0.12;
+            if (sp > mx) { m.velocityX *= mx / sp; m.velocityY *= mx / sp; }
+        }
+        m.x += m.velocityX;
+        m.y += m.velocityY;
+        m.angle += m.rotationSpeed;
+
+        if (m.x < -m.radius) m.x = canvas.width + m.radius;
+        if (m.x > canvas.width + m.radius) m.x = -m.radius;
+        if (m.y < -m.radius) m.y = canvas.height + m.radius;
+        if (m.y > canvas.height + m.radius) m.y = -m.radius;
+    }
+
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        for (let j = minerals.length - 1; j >= 0; j--) {
+            let b = bullets[i], m = minerals[j];
+            if (!b || !m) continue;
+
+            if (Math.hypot(b.x - m.x, b.y - m.y) < m.radius) {
+                score += (4 - m.tier) * 120;
+                createExplosion(m.x, m.y, m.element.color);
+                createReactionText(m.x, m.y, m.element.color, m.element.reaction);
+
+                if (m.tier > 1) {
+                    spawnMineral(m.x, m.y, m.tier - 1);
+                    spawnMineral(m.x, m.y, m.tier - 1);
+                }
+
+                minerals.splice(j, 1);
+                bullets.splice(i, 1);
+                break;
+            }
+        }
+    }
+
+    for (let m of minerals) {
+        if (ship.invuln > 0) continue;
+        if (Math.hypot(ship.x - m.x, ship.y - m.y) < ship.radius + m.radius * 0.8) {
+            if (shieldOn) {
+                shieldOn = false;
+                shieldTimer = 900;
+                ship.invuln = 90;
+                createExplosion(ship.x, ship.y, '#55aaff');
+                break;
+            }
+            lives--;
+            ship.invuln = 120;
+            createExplosion(ship.x, ship.y, '#ff3366');
+            if (lives <= 0) {
+                showQuiz();
+            } else {
+                ship.x = canvas.width / 2;
+                ship.y = canvas.height / 2;
+                ship.velocityX = 0; ship.velocityY = 0;
+            }
+            break;
+        }
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    for (let i = reactionTexts.length - 1; i >= 0; i--) {
+        let rt = reactionTexts[i];
+        rt.y -= 0.8; rt.life--; rt.opacity = rt.life / 40;
+        if (rt.life <= 0) reactionTexts.splice(i, 1);
+    }
+
+    if (minerals.length === 0) {
+        wave++;
+        showBanner('ONDA ' + wave);
+        ship.invuln = Math.max(ship.invuln, 60);
+        const n = Math.min(4 + wave, 11);
+        for (let i = 0; i < n; i++) spawnMineral(Math.random() * canvas.width, Math.random() * canvas.height, 3);
+    }
+
+    if (banner.life > 0) banner.life--;
+    checkPowers();
+    scoreDisplay.innerText = `PONTOS: ${score} · ONDA ${wave}`;
+    livesDisplay.innerText = `VIDAS: ${lives}`;
+}
+
+function draw() {
+    ctx.fillStyle = '#02050b';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = 'rgba(0, 255, 204, 0.08)';
+    ctx.lineWidth = 1.5;
+    for (let d of bgDeco) {
+        ctx.save();
+        ctx.translate(d.x, d.y);
+        ctx.rotate(d.angle);
+        if (d.type === 'benzene') {
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                let a = (i / 6) * Math.PI * 2;
+                let px = Math.cos(a) * d.size, py = Math.sin(a) * d.size;
+                if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.closePath(); ctx.stroke();
+            ctx.beginPath(); ctx.arc(0, 0, d.size * 0.5, 0, Math.PI * 2); ctx.stroke();
+        } else {
+            ctx.beginPath();
+            ctx.moveTo(0, -d.size * 0.7);
+            ctx.quadraticCurveTo(d.size * 0.7, d.size * 0.1, 0, d.size * 0.6);
+            ctx.quadraticCurveTo(-d.size * 0.7, d.size * 0.1, 0, -d.size * 0.7);
+            ctx.closePath(); ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    ctx.fillStyle = '#00ffff';
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = '#00ffff';
+    for (let b of bullets) {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    for (let m of minerals) {
+        ctx.save();
+        ctx.translate(m.x, m.y);
+
+        ctx.save();
+        ctx.rotate(m.angle);
+        ctx.strokeStyle = m.element.color;
+        ctx.fillStyle = m.seek ? 'rgba(70, 8, 22, 0.9)' : 'rgba(4, 12, 24, 0.85)';
+        ctx.shadowColor = m.element.color;
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        for (let i = 0; i < m.vertices.length; i++) {
+            let v = m.vertices[i];
+            if (i === 0) ctx.moveTo(v.x, v.y); else ctx.lineTo(v.x, v.y);
+        }
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.restore();
+
+        drawMolecule(ctx, m.element.symbol, m.radius * 0.9, m.angle);
+
+        ctx.fillStyle = m.element.color;
+        ctx.textAlign = 'center';
+        ctx.font = `bold ${Math.max(11, m.radius * 0.55)}px Courier New`;
+        ctx.fillText(m.element.symbol, 0, m.radius + 12);
+        ctx.restore();
+    }
+
+    if (gameState === 'PLAYING' || gameState === 'PAUSED') {
+        ctx.save();
+        ctx.translate(ship.x, ship.y);
+        ctx.rotate(ship.angle);
+
+        ctx.strokeStyle = '#00ffcc';
+        ctx.shadowColor = '#00ffcc';
+        ctx.shadowBlur = 10;
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.moveTo(ship.radius, 0);
+        ctx.lineTo(-ship.radius, -ship.radius / 1.5);
+        ctx.lineTo(-ship.radius / 2, 0);
+        ctx.lineTo(-ship.radius, ship.radius / 1.5);
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    for (let p of particles) {
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    drawOverlays();
+    for (let rt of reactionTexts) {
+        ctx.save();
+        ctx.globalAlpha = rt.opacity;
+        ctx.fillStyle = rt.color;
+        ctx.font = 'bold 12px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText(rt.text, rt.x, rt.y);
+        ctx.restore();
+    }
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+</body>
+</html>
